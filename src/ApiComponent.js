@@ -12,11 +12,16 @@ function ApiComponent() {
   const [singleMovie, setSingleMovie] = useState(null);
   const [showAll, setShowAll] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [showId, setShowId] = useState(false);
 
   // Hae elokuvat komponentin alustusvaiheessa
   useEffect(() => {
     fetchAllMovies();
   }, []);
+
+  const toggleShowId = () => {
+    setShowId(!showId);
+  }
 
   const fetchAllMovies = () => {
     axios.get('http://127.0.0.1:5000/movies')
@@ -123,22 +128,26 @@ function ApiComponent() {
         {showAll ? 'Piilota kaikki elokuvat' : 'Näytä kaikki elokuvat'}
       </button>
 
-      {/* Näytä elokuvat */}
+      {/* Nayta elokuvat */}
+      <button onClick={toggleShowId}>
+        {showId ? 'Piilota ID' : 'Nayta ID'}
+      </button>
       {showAll && (
         <ul>
           {data.map((movie) => (
             <li key={movie.id}>
-              {movie.title} ({movie.genre}) ({movie.director}) ({movie.releaseYear}) ({movie.rating})
-              <button onClick={() => startEditing(movie)}>Muokkaa</button>
-              <button onClick={() => handleDeleteMovie(movie.id)}>Poista</button>
+            {showId && <span>{movie.id} </span>}
+				    {movie.title} ({movie.genre}) ({movie.director}) ({movie.releaseYear}) ({movie.rating})
+            <button onClick={() => startEditing(movie)}>Muokkaa</button>
+            <button onClick={() => handleDeleteMovie(movie.id)}>Poista</button>
             </li>
           ))}
         </ul>
       )}
 
-      {/* Elokuvan päivitys ja lisäys */}
+      {/* Elokuvan päivitys ja lisays */}
       <div>
-        <h2>{isEditing ? 'Päivitä elokuva' : 'Lisää uusi elokuva'}</h2>
+        <h2>{isEditing ? 'Paivita elokuva' : 'Lisaa uusi elokuva'}</h2>
         <input 
           type="text" 
           placeholder="Title" 
@@ -181,7 +190,7 @@ function ApiComponent() {
 
       {/* Hae yksittäinen elokuva id:n perusteella*/}
       <div>
-        <h2>Hae elokuva id:llä</h2>
+        <h2>Hae elokuvan id:lla</h2>
         <input 
           type="text" 
           placeholder="Movie ID" 
