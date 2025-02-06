@@ -13,6 +13,9 @@ function ApiComponent() {
   const [showAll, setShowAll] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showId, setShowId] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchBy, setSearchBy] = useState('title');
 
   // Hae elokuvat komponentin alustusvaiheessa
   useEffect(() => {
@@ -21,7 +24,7 @@ function ApiComponent() {
 
   const toggleShowId = () => {
     setShowId(!showId);
-  }
+  };
 
   const fetchAllMovies = () => {
     axios.get('http://127.0.0.1:5000/movies')
@@ -35,7 +38,7 @@ function ApiComponent() {
 
   const handleAddMovie = () => {
     if (!title || !genre || !releaseYear || !director || !rating) {
-      alert('Täytä kaikki kentät, kiitos');
+      alert('Tayta kaikki kentat, kiitos');
       return;
     }
 
@@ -46,13 +49,13 @@ function ApiComponent() {
         resetForm();
       })
       .catch(error => {
-        console.error('[NOK] - Virhe elokuvan lisäämisessä:', error);
+        console.error('[NOK] - Virhe elokuvan lisaamisessa:', error);
       });
   };
 
   const handleUpdateMovie = () => {
     if (!title || !genre || !releaseYear || !director || !rating) {
-      alert('Ole hyvä ja täytä kaikki vaaditut kentät!');
+      alert('Ole hyva ja tayta kaikki vaaditut kentat!');
       return;
     }
 
@@ -69,7 +72,7 @@ function ApiComponent() {
   };
 
   const handleDeleteMovie = (id) => {
-    if (window.confirm('Oletko varma, että haluat poistaa tämän elokuvan?')) {
+    if (window.confirm('Oletko varma, etta haluat poistaa taman elokuvan?')) {
       axios.delete(`http://127.0.0.1:5000/movies/${id}`)
         .then(() => {
           setData(data.filter(movie => movie.id !== id));
@@ -105,13 +108,16 @@ function ApiComponent() {
   };
 
   const handleGetSingleMovie = () => {
-    if (!movieId) {
-      alert('Lisää elokuvan ID');
+    if (!searchTerm) {
+      alert('Lisaa hakuehto');
       return;
     }
 
-    axios.get(`http://127.0.0.1:5000/movies/${movieId}`)
+    const queryParam = `${searchBy}=${encodeURIComponent(searchTerm)}`;
+    console.log(`Searching for movie with ${queryParam}`);
+    axios.get(`http://127.0.0.1:5000/movies/search?${queryParam}`)
       .then(response => {
+        console.log('Search result:', response.data);
         setSingleMovie(response.data);
       })
       .catch(error => {
@@ -120,12 +126,31 @@ function ApiComponent() {
       });
   };
 
+  const handleSearch = () => {
+    if (!searchTerm) {
+      alert('Ole hyva ja syota hakuehto');
+      return;
+    }
+
+    const queryParam = `${searchBy}=${encodeURIComponent(searchTerm)}`;
+    console.log(`Etsitaan elokuvia: ${queryParam}`);
+    axios
+      .get(`http://127.0.0.1:5000/movies/search?${queryParam}`)
+      .then((response) => {
+        console.log('Etsinnan tulokset:', response.data);
+        setSearchResults(response.data.results);
+      })
+      .catch((error) => {
+        console.error('[NOK] - Virhe, elokuvaa ei loydy:', error);
+      });
+  };
+
   return (
     <div>
       <h1>Lista elokuvista</h1>
-      {/* Näytä/piilota elokuvat */}
+      {/* Nayta/piilota elokuvat */}
       <button onClick={() => setShowAll(!showAll)}>
-        {showAll ? 'Piilota kaikki elokuvat' : 'Näytä kaikki elokuvat'}
+        {showAll ? 'Piilota kaikki elokuvat' : 'Nayta kaikki elokuvat'}
       </button>
 
       {/* Nayta elokuvat */}
@@ -136,78 +161,94 @@ function ApiComponent() {
         <ul>
           {data.map((movie) => (
             <li key={movie.id}>
-            {showId && <span>{movie.id} </span>}
-				    {movie.title} ({movie.genre}) ({movie.director}) ({movie.releaseYear}) ({movie.rating})
-            <button onClick={() => startEditing(movie)}>Muokkaa</button>
-            <button onClick={() => handleDeleteMovie(movie.id)}>Poista</button>
+              {showId && <span>{movie.id} </span>}
+              {movie.title} ({movie.genre}) ({movie.director}) ({movie.releaseYear}) ({movie.rating})
+              <button onClick={() => startEditing(movie)}>Muokkaa</button>
+              <button onClick={() => handleDeleteMovie(movie.id)}>Poista</button>
             </li>
           ))}
         </ul>
       )}
 
-      {/* Elokuvan päivitys ja lisays */}
+      {/* Elokuvan paivitys ja lisays */}
       <div>
         <h2>{isEditing ? 'Paivita elokuva' : 'Lisaa uusi elokuva'}</h2>
         <input 
           type="text" 
-          placeholder="Title" 
+          placeholder="Nimi" 
           value={title}
           onChange={(e) => setTitle(e.target.value)} 
         />
         <input 
           type="text" 
-          placeholder="Genre" 
+          placeholder="Luokka" 
           value={genre}
           onChange={(e) => setGenre(e.target.value)} 
         />
         <input 
           type="text" 
-          placeholder="Release Year" 
+          placeholder="Valmistumisvuosi" 
           value={releaseYear}
           onChange={(e) => setReleaseYear(e.target.value)} 
         />
         <input 
           type="text" 
-          placeholder="Director" 
+          placeholder="Ohjaaja" 
           value={director}
           onChange={(e) => setDirector(e.target.value)} 
         />  
         <input 
           type="text" 
-          placeholder="Rating" 
+          placeholder="Arvostelu" 
           value={rating}
           onChange={(e) => setRating(e.target.value)} 
         />
         <button onClick={isEditing ? handleUpdateMovie : handleAddMovie}>
-          {isEditing ? 'Päivitä' : 'Lisää'}
+          {isEditing ? 'Paivita' : 'Lisaa'}
         </button>
         {isEditing && (
           <button onClick={cancelEdit}>
-            Cancel
+            Peruuta
           </button>
         )}
       </div>
 
-      {/* Hae yksittäinen elokuva id:n perusteella*/}
+      {/* Etsi elokuva hakuehdon perusteella */}
       <div>
-        <h2>Hae elokuvan id:lla</h2>
-        <input 
-          type="text" 
-          placeholder="Movie ID" 
-          value={movieId}
-          onChange={(e) => setMovieId(e.target.value)} 
+        <h2>Etsi elokuva</h2>
+        <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)}>
+          <option value="id">ID</option>
+          <option value="title">Nimi</option>
+          <option value="director">Ohjaaja</option>
+          <option value="genre">Luokka</option>
+          <option value="releaseYear">Julkaisuvuosi</option>
+          <option value="rating">Arvostelu</option>
+        </select>
+        <input
+          type="text"
+          placeholder={`Etsitaan ${searchBy}`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <button onClick={handleGetSingleMovie}>Get Movie</button>
-        {singleMovie && (
-          <div>
-            <h3>{singleMovie.title} ({singleMovie.releaseYear})</h3>
-            <p><strong>Director:</strong> {singleMovie.director}</p>
-            <p><strong>Genre:</strong> {singleMovie.genre}</p>
-            <p><strong>Rating:</strong> {singleMovie.rating}</p>
-          </div>
-        )}
+        <button onClick={handleSearch}>Etsi elokuva</button>
       </div>
+
+      {searchResults.length > 0 && (
+        <div>
+          <h3>Haun tulokset</h3>
+          <ul>
+            {searchResults.map((movie) => (
+              <li key={movie.id}>
+                {movie.title} ({movie.releaseYear})
+                <button onClick={() => startEditing(movie)}>Muokkaa</button>
+                <button onClick={() => handleDeleteMovie(movie.id)}>Poista</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
+
 export default ApiComponent;
